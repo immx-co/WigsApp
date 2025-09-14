@@ -5,6 +5,7 @@
         <router-link class="logo" to="/">Главная</router-link>
         <router-link class="btn primary" :to="{ name: 'assortment' }">Ассортимент</router-link>
       </div>
+
       <div class="right">
         <router-link class="btn" :to="{ name: 'cart' }">
           Корзина
@@ -13,9 +14,13 @@
         <router-link class="btn" :to="{ name: 'account' }">Личный кабинет</router-link>
 
         <!-- Кнопки авторизации -->
-        <button class="btn solid" type="button" @click="openLogin">Войти</button>
-        <button class="btn" type="button" @click="logout">Выйти</button>
-        <button class="btn solid" type="button" @click="openRegister">Зарегистрироваться</button>
+        <template v-if="isLogged">
+          <button class="btn" type="button" @click="logout">Выйти</button>
+        </template>
+        <template v-else>
+          <button class="btn solid" type="button" @click="openLogin">Войти</button>
+          <button class="btn solid" type="button" @click="openRegister">Зарегистрироваться</button>
+        </template>
       </div>
     </nav>
   </header>
@@ -28,11 +33,24 @@
       <form autocomplete="off" @submit.prevent="submitLogin">
         <label class="field">
           <span>Логин</span>
-          <input ref="loginInput" v-model.trim="login" type="text" name="login" autocomplete="off" required />
+          <input
+            ref="loginInput"
+            v-model.trim="login"
+            type="text"
+            name="login"
+            autocomplete="off"
+            required
+          />
         </label>
         <label class="field">
           <span>Пароль</span>
-          <input v-model="password" type="password" name="pass" autocomplete="new-password" required />
+          <input
+            v-model="password"
+            type="password"
+            name="pass"
+            autocomplete="new-password"
+            required
+          />
         </label>
         <p v-if="error" class="error">{{ error }}</p>
         <div class="actions">
@@ -51,11 +69,24 @@
       <form autocomplete="off" @submit.prevent="submitRegister">
         <label class="field">
           <span>Логин</span>
-          <input ref="registerLoginInput" v-model.trim="regLogin" type="text" name="login" autocomplete="off" required />
+          <input
+            ref="registerLoginInput"
+            v-model.trim="regLogin"
+            type="text"
+            name="login"
+            autocomplete="off"
+            required
+          />
         </label>
         <label class="field">
           <span>Пароль</span>
-          <input v-model="regPassword" type="password" name="pass" autocomplete="new-password" required />
+          <input
+            v-model="regPassword"
+            type="password"
+            name="pass"
+            autocomplete="new-password"
+            required
+          />
         </label>
         <p v-if="regError" class="error">{{ regError }}</p>
         <div class="actions">
@@ -73,23 +104,25 @@
 </template>
 
 <script setup>
-import { ref, nextTick, onMounted, onBeforeUnmount } from 'vue'
+import { ref, nextTick, onMounted, onBeforeUnmount, computed } from 'vue'
 import axios from 'axios'
 
 defineProps({
   cartCount: { type: [Number, Object], default: 0 }
 })
 
-// API base URL
+// API base URL (Vite / Vue CLI / fallback)
 const API_BASE =
   (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_BASE) ||
   (typeof process !== 'undefined' && process.env && process.env.VUE_APP_API_BASE) ||
   'http://localhost:8000'
 const apiUrl = (path) => `${API_BASE}${path}`
 
-// current user sync with AccountView via localStorage + custom event
+// ===== Текущий пользователь (через localStorage + событие) =====
 const USER_KEY = 'current_user'
 const currentUser = ref('default')
+const isLogged = computed(() => !!currentUser.value && currentUser.value !== 'default')
+
 function setCurrentUser(name) {
   try { localStorage.setItem(USER_KEY, name || 'default') } catch {}
   document.dispatchEvent(new CustomEvent('auth:user-changed', { detail: { username: name || 'default' } }))
@@ -115,21 +148,21 @@ onBeforeUnmount(() => {
   if (userChangedHandler) document.removeEventListener('auth:user-changed', userChangedHandler)
 })
 
-/* --------- Login modal state --------- */
+// ===== Login modal =====
 const loginOpen = ref(false)
 const login = ref('')
 const password = ref('')
 const error = ref('')
 const loginInput = ref(null)
 
-/* --------- Register modal state --------- */
+// ===== Register modal =====
 const registerOpen = ref(false)
 const regLogin = ref('')
 const regPassword = ref('')
 const regError = ref('')
 const registerLoginInput = ref(null)
 
-/* --------- Toast --------- */
+// ===== Toast =====
 const toast = ref({ show: false, text: '', kind: 'info' })
 let toastTimer = null
 function showToast(text, kind='info', timeout=2500) {
@@ -138,7 +171,7 @@ function showToast(text, kind='info', timeout=2500) {
   toastTimer = setTimeout(() => { toast.value.show = false }, timeout)
 }
 
-/* --------- Modal handlers --------- */
+// ===== Modal handlers =====
 function openLogin() {
   registerOpen.value = false
   error.value = ''
@@ -151,7 +184,6 @@ function closeLogin() {
   password.value = ''
   error.value = ''
 }
-
 function openRegister() {
   loginOpen.value = false
   regError.value = ''
@@ -165,7 +197,7 @@ function closeRegister() {
   regError.value = ''
 }
 
-/* --------- Submit handlers --------- */
+// ===== Submit handlers =====
 async function submitLogin() {
   try {
     if (!login.value || !password.value) {
@@ -210,9 +242,11 @@ async function submitRegister() {
       headers: { 'Content-Type': 'application/json' },
       withCredentials: true
     })
-    showToast('Регистрация успешна', 'success')
-    setCurrentUser(regLogin.value)
+    showToast('Регистрация успешна. Теперь войдите в аккаунт.', 'success')
+    regLogin.value = ''
+    regPassword.value = ''
     closeRegister()
+    openLogin()
   } catch (e) {
     regError.value = (e?.response?.data?.detail) || e?.message || 'Ошибка регистрации'
     showToast(regError.value, 'error')
