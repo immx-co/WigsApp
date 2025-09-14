@@ -11,7 +11,10 @@
           <span v-if="cartCount && cartCount > 0" class="badge">{{ cartCount }}</span>
         </router-link>
         <router-link class="btn" :to="{ name: 'account' }">Личный кабинет</router-link>
+
+        <!-- Кнопки авторизации -->
         <button class="btn solid" type="button" @click="openLogin">Войти</button>
+        <button class="btn" type="button" @click="logout">Выйти</button>
         <button class="btn solid" type="button" @click="openRegister">Зарегистрироваться</button>
       </div>
     </nav>
@@ -70,28 +73,47 @@
 </template>
 
 <script setup>
-import { ref, nextTick } from 'vue'
+import { ref, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import axios from 'axios'
 
 defineProps({
   cartCount: { type: [Number, Object], default: 0 }
 })
 
-// API base URL from env or fallback
+// API base URL
 const API_BASE =
   (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_BASE) ||
   (typeof process !== 'undefined' && process.env && process.env.VUE_APP_API_BASE) ||
   'http://localhost:8000'
 const apiUrl = (path) => `${API_BASE}${path}`
 
-// Simple current-user bridge w/o changing App.vue
+// current user sync with AccountView via localStorage + custom event
 const USER_KEY = 'current_user'
+const currentUser = ref('default')
 function setCurrentUser(name) {
   try { localStorage.setItem(USER_KEY, name || 'default') } catch {}
-  if (typeof document !== 'undefined') {
-    document.dispatchEvent(new CustomEvent('auth:user-changed', { detail: { username: name || 'default' } }))
+  document.dispatchEvent(new CustomEvent('auth:user-changed', { detail: { username: name || 'default' } }))
+  currentUser.value = name || 'default'
+}
+function loadCurrentUser() {
+  try {
+    const v = localStorage.getItem(USER_KEY)
+    currentUser.value = v || 'default'
+  } catch {
+    currentUser.value = 'default'
   }
 }
+let userChangedHandler = null
+onMounted(() => {
+  loadCurrentUser()
+  userChangedHandler = (e) => {
+    currentUser.value = (e?.detail?.username) ?? 'default'
+  }
+  document.addEventListener('auth:user-changed', userChangedHandler)
+})
+onBeforeUnmount(() => {
+  if (userChangedHandler) document.removeEventListener('auth:user-changed', userChangedHandler)
+})
 
 /* --------- Login modal state --------- */
 const loginOpen = ref(false)
@@ -108,7 +130,7 @@ const regError = ref('')
 const registerLoginInput = ref(null)
 
 /* --------- Toast --------- */
-const toast = ref({ show: false, text: '', kind: 'info' }) // kind: success|error|info|warning
+const toast = ref({ show: false, text: '', kind: 'info' })
 let toastTimer = null
 function showToast(text, kind='info', timeout=2500) {
   toast.value = { show: true, text, kind }
@@ -150,7 +172,6 @@ async function submitLogin() {
       error.value = 'Введите логин и пароль'
       return
     }
-    // Verify via FastAPI
     await axios.post(apiUrl('/person/verify'), {
       login: login.value,
       password: password.value
@@ -182,7 +203,6 @@ async function submitRegister() {
       regError.value = 'Введите логин и пароль'
       return
     }
-    // Register via FastAPI
     await axios.post(apiUrl('/person/add'), {
       login: regLogin.value,
       password: regPassword.value
@@ -196,6 +216,24 @@ async function submitRegister() {
   } catch (e) {
     regError.value = (e?.response?.data?.detail) || e?.message || 'Ошибка регистрации'
     showToast(regError.value, 'error')
+  }
+}
+
+async function logout() {
+  const loginName = currentUser.value
+  if (!loginName || loginName === 'default') {
+    showToast('Сначала войдите', 'warning')
+    return
+  }
+  try {
+    await axios.post(apiUrl('/person/logout'), null, {
+      params: { login: loginName },
+      withCredentials: true
+    })
+    setCurrentUser('default')
+    showToast('Вы вышли из аккаунта', 'success')
+  } catch (e) {
+    showToast(e?.response?.data?.detail || e?.message || 'Не удалось выйти', 'error')
   }
 }
 </script>

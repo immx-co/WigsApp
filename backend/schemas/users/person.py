@@ -1,5 +1,5 @@
 from schemas.base import Base
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Boolean, Column, Integer, String
 
 
 class Person(Base):
@@ -7,3 +7,4 @@ class Person(Base):
     id = Column(Integer, primary_key=True, index=True)
     login = Column(String)
     password = Column(String)
+    is_active = Column(Boolean)

@@ -1,5 +1,5 @@
 import db
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from hasher.passlib_hasher import hash_password
 from hasher.verify_password import verify_password
 from models.users.person_create import PersonCreate
@@ -27,7 +27,7 @@ async def create_person(
 
     hashed = hash_password(person.password)
 
-    new_person = Person(login=person.login, password=hashed)
+    new_person = Person(login=person.login, password=hashed, is_active=False)
     session.add(new_person)
     await session.commit()
     await session.refresh(new_person)
@@ -66,5 +66,35 @@ async def verify_person(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect password."
         )
+
+    if not user.is_active:
+        user.is_active = True
+        await session.commit()
+        await session.refresh(user)
+
+    return True
+
+@user_router.post(
+    "/logout",
+    response_model=bool,
+    responses={
+        404: {"description": "User not found."}
+    }
+)
+async def logout_user(
+    login: str = Query(..., description="Логин пользователя."),
+    session: AsyncSession = Depends(db.get_db),
+) -> bool:
+    """Переводит пользователя с указанным login в состояние False."""
+
+    result = await session.execute(select(Person).where(Person.login == login))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
+    
+    if user.is_active:
+        user.is_active = False
+        await session.commit()
+        await session.refresh(user)
 
     return True

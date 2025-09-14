@@ -12,11 +12,11 @@
       "console": "integratedTerminal",
       "env": {
         "PG_USER": "postgres",
-        "PG_PASSWORD": "123",
+        "PG_PASSWORD": "topiho99",
         "PG_HOST": "localhost",
         "PG_PORT": "5432",
         "PG_ADMIN_DB": "postgres",
-        "PG_APP_DB": "some_db_name"
+        "PG_APP_DB": "anton_db"
       }
     }
   ]
