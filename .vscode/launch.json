@@ -1,0 +1,23 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Python Debugger: Current File",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${file}",
+      "console": "integratedTerminal",
+      "env": {
+        "PG_USER": "postgres",
+        "PG_PASSWORD": "123",
+        "PG_HOST": "localhost",
+        "PG_PORT": "5432",
+        "PG_ADMIN_DB": "postgres",
+        "PG_APP_DB": "test_verify"
+      }
+    }
+  ]
+}

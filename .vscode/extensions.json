@@ -1,0 +1,16 @@
+{
+    "recommendations": [
+        "ms-python.python",
+        "dsakawa.vscode-black",
+        "ms-python.vscode-pylint",
+        "eamodio.gitlens",
+        "donjayamanne.githistory",
+        "ms-python.isort",
+        "ionutvmi.path-autocomplete",
+        "ms-python.pylint",
+        "pamaron.pytest-runner",
+        "ms-python.debugpy",
+        "ms-python.black-formatter",
+        "njpwerner.autodocstring",
+    ]
+}
