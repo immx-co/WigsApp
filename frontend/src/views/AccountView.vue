@@ -9,7 +9,7 @@
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 
 const USER_KEY = 'current_user'
-const username = ref('default')
+const username = ref('unknown')
 
 function loadUser() {
   try {

@@ -9,32 +9,6 @@
 import { reactive, computed, provide, watch } from 'vue'
 import AppHeader from '@/components/Header.vue'
 
-const catalog = reactive({
-  items: [
-    {
-      id: 'mug',
-      title: "Парик 'Моднявый'",
-      price: 799,
-      image: 'https://lv2.pigugroup.eu/colours/259/954/66/25995466/pelnruskites-paruka-blondine-a6f16_large.jpg',
-      description: 'Ебейший паричок, на каждый день.'
-    },
-    {
-      id: 'tee',
-      title: "Парик 'Четкий'",
-      price: 1499,
-      image: 'https://news.store.rambler.ru/img/1b8141721f502dc7a2a71841eea8739e?img-1-resize=width%3A1280%2Cheight%3A960%2Cfit%3Acover&img-format=auto',
-      description: 'Подойдет для мужичков 40+ (сокращенно "скуфчик").'
-    },
-    {
-      id: 'bag',
-      title: "Парик 'Хайповый'",
-      price: 3990,
-      image: 'https://eclida.ru/storage/files/EKyP0iokLS.webp',
-      description: 'Будешь самой модной на районе чиксой.'
-    }
-  ]
-})
-provide('catalog', catalog)
 
 const CART_KEY = 'cart_v1'
 const state = reactive({

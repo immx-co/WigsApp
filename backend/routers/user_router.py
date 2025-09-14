@@ -4,7 +4,7 @@ from hasher.passlib_hasher import hash_password
 from hasher.verify_password import verify_password
 from models.users.person_create import PersonCreate
 from models.users.person_verify import PersonVerify
-from schemas.person import Person
+from schemas.users.person import Person
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 

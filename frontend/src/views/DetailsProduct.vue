@@ -1,5 +1,13 @@
 <template>
-  <section class="details" v-if="product">
+  <section v-if="loading" class="details">
+    Загрузка…
+  </section>
+
+  <section v-else-if="error" class="notfound">
+    {{ error }}
+  </section>
+
+  <section v-else-if="product" class="details">
     <div class="media">
       <img :src="product.image" :alt="product.title" />
     </div>
@@ -10,23 +18,62 @@
       <button class="buy" @click="add()">В корзину</button>
     </div>
   </section>
+
   <section v-else class="notfound">
     Товар не найден.
   </section>
 </template>
 
 <script setup>
-import { inject, computed } from 'vue'
+import { inject, ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
+import axios from 'axios'
 
-const catalog = inject('catalog')
-const cart = inject('cart')
+const API_BASE =
+  (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_BASE) ||
+  (typeof process !== 'undefined' && process.env && process.env.VUE_APP_API_BASE) ||
+  'http://localhost:8000'
+const apiUrl = (p) => `${API_BASE}${p}`
+
+const cart = inject('cart', null)
 const route = useRoute()
-const id = computed(() => route.params.id)
+const id = computed(() => String(route.params.id ?? ''))
 
-const product = computed(() => {
-  return catalog?.items?.find?.(i => String(i.id) === String(id.value))
-})
+const product = ref(null)
+const loading = ref(false)
+const error = ref('')
+
+async function fetchProduct() {
+  loading.value = true
+  error.value = ''
+  product.value = null
+  try {
+    const res = await axios.get(apiUrl(`/goods/${encodeURIComponent(id.value)}`), {
+      withCredentials: true,
+      headers: { 'Accept': 'application/json' }
+    })
+    // Подстрахуемся по полям, чтобы не было исключений в шаблоне
+    const raw = res.data || {}
+    product.value = {
+      id: raw.id ?? raw.goods_id ?? '',
+      title: raw.title ?? '',
+      price: raw.price ?? 0,
+      image: raw.image ?? '',
+      description: raw.description ?? '',
+      category: raw.category ?? null,
+    }
+  } catch (e) {
+    const s = e?.response?.status
+    if (s === 404) error.value = 'Товар не найден'
+    else error.value = e?.message || 'Ошибка загрузки товара'
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(fetchProduct)
+// если переходишь между деталями, но компонент не размонтируется — перезагрузим данные
+watch(id, () => { fetchProduct() })
 
 function formatPrice(v) {
   const num = Number(v)

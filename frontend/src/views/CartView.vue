@@ -26,16 +26,25 @@
 
     <div v-if="cart.items.length" class="summary">
       <div class="total">Итого: <strong>{{ formatPrice(total) }}</strong></div>
-      <button class="clear" @click="cart.clearCart()">Очистить корзину</button>
+      <div class="actions">
+        <button class="primary" :disabled="placing" @click="placeOrder">
+          {{ placing ? 'Оформляем…' : 'Оформить заказ' }}
+        </button>
+        <button class="clear" @click="cart.clearCart()">Очистить корзину</button>
+      </div>
     </div>
+
+    <p v-if="notice" class="notice">{{ notice }}</p>
   </section>
 </template>
 
 <script setup>
-import { inject, computed } from 'vue'
+import { inject, computed, ref } from 'vue'
 const cart = inject('cart')
 
 const total = computed(() => cart?.total?.value ?? 0)
+const placing = ref(false)
+const notice = ref('')
 
 const formatPrice = (v) => {
   const num = Number(v)
@@ -49,6 +58,23 @@ const formatPrice = (v) => {
 function onInputQty(e, item) {
   const val = Math.max(1, Number(e.target.value) || 1)
   cart.setQty(item.id, val)
+}
+
+async function placeOrder() {
+  if (!cart.items.length) return
+  placing.value = true
+  notice.value = ''
+  try {
+    // TODO: заменить на реальный вызов бэкенда (например, POST /orders)
+    // const res = await axios.post(apiUrl('/orders'), { items: cart.items, total: total.value }, { withCredentials: true })
+    // success flow:
+    cart.clearCart()
+    notice.value = 'Заказ оформлен! Мы свяжемся с вами в ближайшее время.'
+  } catch (e) {
+    notice.value = e?.response?.data?.detail || e?.message || 'Не удалось оформить заказ'
+  } finally {
+    placing.value = false
+  }
 }
 </script>
 
@@ -65,7 +91,18 @@ function onInputQty(e, item) {
 .btn { width: 32px; height: 32px; border-radius: 8px; border: 1px solid #e2e2e2; background: #fff; cursor: pointer; }
 .qty { width: 52px; height: 32px; padding: 0 6px; text-align: center; border: 1px solid #e2e2e2; border-radius: 8px; }
 .remove, .clear { padding: 8px 12px; border-radius: 10px; border: 1px solid #e2e2e2; background: #fff; cursor: pointer; }
-.summary { display: flex; justify-content: space-between; align-items: center; margin-top: 16px; }
+.summary { display: flex; justify-content: space-between; align-items: center; margin-top: 16px; gap: 12px; flex-wrap: wrap; }
 .total { font-size: 1.1rem; }
+.actions { display: flex; gap: 10px; }
+.primary {
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid #111827;
+  background: #111827;
+  color: #fff;
+  cursor: pointer;
+}
+.primary[disabled] { opacity: .7; cursor: default; }
 .empty { color: #666; margin-top: 8px; }
+.notice { margin-top: 12px; color: #166534; background: #f0fdf4; border: 1px solid #86efac; padding: 8px 10px; border-radius: 10px; }
 </style>

@@ -4,6 +4,7 @@ import db
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from routers.goods_router import goods_router
 from routers.user_router import user_router
 
 
@@ -24,6 +25,7 @@ app.add_middleware(
 )
 
 app.include_router(user_router)
+app.include_router(goods_router)
 
 
 @app.get("/")

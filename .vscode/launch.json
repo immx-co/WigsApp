@@ -16,7 +16,7 @@
         "PG_HOST": "localhost",
         "PG_PORT": "5432",
         "PG_ADMIN_DB": "postgres",
-        "PG_APP_DB": "test_verify"
+        "PG_APP_DB": "some_db_name"
       }
     }
   ]
