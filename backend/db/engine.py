@@ -1,39 +1,26 @@
-# engine.py
-from sqlalchemy.ext.asyncio import (
-    create_async_engine,
-    async_sessionmaker,
-    AsyncSession,
-    AsyncAttrs,
+import os
+
+from schemas.base import Base
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+
+PG_USER = os.getenv("PG_USER", "postgres")
+PG_PASSWORD = os.getenv("PG_PASSWORD", "")
+PG_HOST = os.getenv("PG_HOST", "localhost")
+PG_PORT = int(os.getenv("PG_PORT", "5432"))
+ADMIN_DB = os.getenv("PG_ADMIN_DB", "postgres")
+APP_DB = os.getenv("PG_APP_DB", "some_db")
+
+ADMIN_URL = (
+    f"postgresql+asyncpg://{PG_USER}:{PG_PASSWORD}@{PG_HOST}:{PG_PORT}/{ADMIN_DB}"
 )
-from sqlalchemy.orm import DeclarativeBase, declared_attr
-from sqlalchemy import Column, String, Integer, text
-
-
-PG_USER = "postgres"
-PG_PASSWORD = "123"
-PG_HOST = "localhost"
-PG_PORT = 5433
-ADMIN_DB = "postgres"
-APP_DB = "antoshadb"
-
-ADMIN_URL = f"postgresql+asyncpg://{PG_USER}:{PG_PASSWORD}@{PG_HOST}:{PG_PORT}/{ADMIN_DB}"
-APP_URL   = f"postgresql+asyncpg://{PG_USER}:{PG_PASSWORD}@{PG_HOST}:{PG_PORT}/{APP_DB}"
+APP_URL = f"postgresql+asyncpg://{PG_USER}:{PG_PASSWORD}@{PG_HOST}:{PG_PORT}/{APP_DB}"
 
 engine = create_async_engine(APP_URL, echo=False, pool_pre_ping=True)
-async_session_maker = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
+async_session_maker = async_sessionmaker(
+    engine, expire_on_commit=False, class_=AsyncSession
+)
 
-class Base(AsyncAttrs, DeclarativeBase):
-    __abstract__ = True
-
-    @declared_attr.directive
-    def __tablename__(cls) -> str:
-        return f"{cls.__name__.lower()}s"
-
-class Person(Base):
-    __tablename__ = "people"
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String)
-    age = Column(Integer)
 
 async def init_db() -> None:
     admin_engine = create_async_engine(ADMIN_URL, echo=False, pool_pre_ping=True)
@@ -58,7 +45,9 @@ async def init_db() -> None:
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
+
 # зависимость для FastAPI
 async def get_db():
     async with async_session_maker() as session:
+        yield session
         yield session
