@@ -25,15 +25,17 @@
     </ul>
 
     <div v-if="cart.items.length" class="summary">
-      <div class="total">Итого: <strong>{{ formatPrice(cart.total) }}</strong></div>
+      <div class="total">Итого: <strong>{{ formatPrice(total) }}</strong></div>
       <button class="clear" @click="cart.clearCart()">Очистить корзину</button>
     </div>
   </section>
 </template>
 
 <script setup>
-import { inject } from 'vue'
+import { inject, computed } from 'vue'
 const cart = inject('cart')
+
+const total = computed(() => cart?.total?.value ?? 0)
 
 const formatPrice = (v) => {
   const num = Number(v)
@@ -53,16 +55,7 @@ function onInputQty(e, item) {
 <style scoped>
 .cart { max-width: 900px; margin: 0 auto; padding: 16px; }
 .list { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
-.row {
-  display: grid;
-  grid-template-columns: 88px 1fr auto auto;
-  gap: 12px;
-  align-items: center;
-  border: 1px solid #eee;
-  border-radius: 10px;
-  padding: 8px;
-  background: #fff;
-}
+.row { display: grid; grid-template-columns: 88px 1fr auto auto; gap: 12px; align-items: center; border: 1px solid #eee; border-radius: 10px; padding: 8px; background: #fff; }
 .thumb { width: 88px; height: 66px; object-fit: cover; border-radius: 8px; background: #f3f3f3; }
 .info { display: grid; gap: 6px; }
 .title { font-weight: 600; }
@@ -71,13 +64,7 @@ function onInputQty(e, item) {
 .qtybox { display: inline-flex; align-items: center; gap: 6px; }
 .btn { width: 32px; height: 32px; border-radius: 8px; border: 1px solid #e2e2e2; background: #fff; cursor: pointer; }
 .qty { width: 52px; height: 32px; padding: 0 6px; text-align: center; border: 1px solid #e2e2e2; border-radius: 8px; }
-.remove, .clear {
-  padding: 8px 12px;
-  border-radius: 10px;
-  border: 1px solid #e2e2e2;
-  background: #fff;
-  cursor: pointer;
-}
+.remove, .clear { padding: 8px 12px; border-radius: 10px; border: 1px solid #e2e2e2; background: #fff; cursor: pointer; }
 .summary { display: flex; justify-content: space-between; align-items: center; margin-top: 16px; }
 .total { font-size: 1.1rem; }
 .empty { color: #666; margin-top: 8px; }
