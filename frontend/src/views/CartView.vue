@@ -39,8 +39,12 @@
 </template>
 
 <script setup>
+import axios from 'axios'
 import { inject, computed, ref } from 'vue'
 const cart = inject('cart')
+
+const API_BASE = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_BASE) || (typeof process !== 'undefined' && process.env && process.env.VUE_APP_API_BASE) || 'http://localhost:8000'
+const apiUrl = (p) => `${API_BASE}${p}`
 
 const total = computed(() => cart?.total?.value ?? 0)
 const placing = ref(false)
@@ -65,11 +69,13 @@ async function placeOrder() {
   placing.value = true
   notice.value = ''
   try {
-    // TODO: заменить на реальный вызов бэкенда (например, POST /orders)
-    // const res = await axios.post(apiUrl('/orders'), { items: cart.items, total: total.value }, { withCredentials: true })
-    // success flow:
+    const items = cart.items.map(i => ({ id: String(i.id), qty: Number(i.qty) || 1 }))
+    const res = await axios.post(apiUrl('/order/place'), { items }, { withCredentials: true })
     cart.clearCart()
-    notice.value = 'Заказ оформлен! Мы свяжемся с вами в ближайшее время.'
+    const total = res?.data?.total
+    notice.value = typeof total !== 'undefined'
+      ? `Заказ оформлен! Сумма: ${formatPrice(total)}`
+      : 'Заказ оформлен!'
   } catch (e) {
     notice.value = e?.response?.data?.detail || e?.message || 'Не удалось оформить заказ'
   } finally {
