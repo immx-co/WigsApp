@@ -12,6 +12,52 @@ from sqlalchemy.ext.asyncio import AsyncSession
 order_router = APIRouter(prefix="/order", tags=["Orders"])
 
 
+@order_router.get(
+    "/{user_login}",
+    response_model=list[OrderResponse],
+    responses={"404": {"description": "User not found."}},
+)
+async def get_orders_by_user(
+    user_login: str, session: AsyncSession = Depends(db.get_db)
+) -> list[OrderResponse]:
+    """Возвращает заказы конкретного юзера.
+
+    Args:
+        user_login (str): Имя пользователя.
+        session (AsyncSession, optional): Сессия дб.
+
+    Raises:
+        HTTPException_404: Пользователь не найден.
+
+    Returns:
+        response (list[OrderResponse]): Заказы конкретного юзера.
+    """
+    query_user = await session.execute(select(Person).where(Person.login == user_login))
+    user = query_user.scalar_one_or_none()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found."
+        )
+
+    result = await session.execute(
+        select(Order)
+        .where(Order.user_login == user_login)
+        .order_by(Order.created_at.desc())
+    )
+    rows = result.scalars().all()
+
+    response: list[OrderResponse] = []
+    for row in rows:
+        response.append(
+            OrderResponse(
+                items=row.items,
+                total=float(row.total),
+            )
+        )
+
+    return response
+
+
 @order_router.post(
     "/place",
     response_model=OrderResponse,

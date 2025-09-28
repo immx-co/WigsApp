@@ -1,5 +1,5 @@
 import db
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from hasher.passlib_hasher import hash_password
 from hasher.verify_password import verify_password
 from models.users.person_create import PersonCreate
@@ -74,12 +74,9 @@ async def verify_person(
 
     return True
 
+
 @user_router.post(
-    "/logout",
-    response_model=bool,
-    responses={
-        404: {"description": "User not found."}
-    }
+    "/logout", response_model=bool, responses={404: {"description": "User not found."}}
 )
 async def logout_user(
     login: str = Query(..., description="Логин пользователя."),
@@ -90,11 +87,30 @@ async def logout_user(
     result = await session.execute(select(Person).where(Person.login == login))
     user = result.scalar_one_or_none()
     if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
-    
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found."
+        )
+
     if user.is_active:
         user.is_active = False
         await session.commit()
         await session.refresh(user)
 
     return True
+
+
+@user_router.get(
+    "/active",
+    response_model=str,
+)
+async def get_active_user(
+    session: AsyncSession = Depends(db.get_db),
+) -> str:
+    result = await session.execute(select(Person).where(Person.is_active.is_(True)))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Active user not found."
+        )
+
+    return str(user.login)
