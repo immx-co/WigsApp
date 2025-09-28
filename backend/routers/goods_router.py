@@ -101,3 +101,27 @@ async def create_goods(goods: GoodsCreate, session: AsyncSession = Depends(db.ge
     await session.commit()
     await session.refresh(new_goods)
     return goods
+
+@goods_router.get("/by_category/{category}", response_model=list[GoodsBase])
+async def get_goods_by_category(
+    category: Category, 
+    session: AsyncSession = Depends(db.get_db)) -> list[GoodsBase]:
+    
+    result = await session.execute(select(Goods).where(Goods.category == category.value))
+    goods_by_category = result.scalars().all()
+
+    all_goods: list[GoodsBase] = []
+    for goods in goods_by_category:
+        all_goods.append(GoodsBase(
+            id=goods.goods_id,
+            category=Category(goods.category),
+            description=goods.description,
+            image=goods.image,
+            price=goods.price,
+            title=goods.title,
+        ))
+    return all_goods
+
+@goods_router.get("/categories/full", response_model=list[str])
+async def get_all_categories() -> list[str]:
+    return [cat.value for cat in Category]
