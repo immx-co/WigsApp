@@ -50,6 +50,8 @@ async def get_orders_by_user(
     for row in rows:
         response.append(
             OrderResponse(
+                order_id=str(row.order_id),
+                created_at=row.created_at,
                 items=row.items,
                 total=float(row.total),
             )

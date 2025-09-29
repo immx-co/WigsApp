@@ -106,6 +106,14 @@
 <script setup>
 import { ref, nextTick, onMounted, onBeforeUnmount, computed } from 'vue'
 import axios from 'axios'
+import { useRouter } from 'vue-router';
+
+const router = useRouter()
+
+function goHome() {
+    try { router.push({ name: 'home' }) }
+    catch { try { router.push('/') } catch {} }
+}
 
 defineProps({
   cartCount: { type: [Number, Object], default: 0 }
@@ -214,6 +222,7 @@ async function submitLogin() {
     showToast('Вход выполнен', 'success')
     setCurrentUser(login.value)
     closeLogin()
+    goHome()
   } catch (e) {
     const status = e?.response?.status
     if (status === 404) {
@@ -266,6 +275,7 @@ async function logout() {
     })
     setCurrentUser('default')
     showToast('Вы вышли из аккаунта', 'success')
+    goHome()
   } catch (e) {
     showToast(e?.response?.data?.detail || e?.message || 'Не удалось выйти', 'error')
   }

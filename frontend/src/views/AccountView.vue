@@ -16,8 +16,8 @@
       <ul v-else class="orders">
         <li v-for="(order, idx) in orders" :key="idx" class="order">
           <div class="order-head">
-            <div class="order-title">Заказ #{{ idx + 1 }}</div>
-            <div class="order-total">Итого: <strong>{{ formatPrice(order.total) }}</strong></div>
+            <div class="order-title">Заказ {{ shortId(order.order_id) }}</div>
+            <div class="order-meta"><div class="order-date" v-if="order.created_at">от {{ formatDate(order.created_at) }}</div><div class="order-total">Итого: <strong>{{ formatPrice(order.total) }}</strong></div></div>
           </div>
           <ul class="items">
             <li v-for="(it, i) in order.items" :key="i" class="item">
@@ -47,6 +47,13 @@ const orders = ref([])
 const loading = ref(false)
 const error = ref('')
 
+function formatDate(d) {
+  try {
+    const dt = new Date(d)
+    return dt.toLocaleString('ru-RU', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+  } catch { return d }
+}
+
 function formatPrice(v) {
   const num = Number(v)
   if (Number.isFinite(num)) {
@@ -54,6 +61,11 @@ function formatPrice(v) {
     catch { return new Intl.NumberFormat('ru-RU').format(num) + ' ₽' }
   }
   return v
+}
+
+function shortId(id) {
+  if (!id) return ''
+  try { return String(id).slice(0, 5) } catch { return id }
 }
 
 async function loadActiveUser() {
@@ -105,4 +117,6 @@ h1 { margin-bottom: 12px; }
 .item .title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .item .qty { color: #6b7280; }
 .item .line { font-weight: 600; }
+.order-meta { display: flex; gap: 12px; align-items: baseline; }
+.order-date { color: #6b7280; }
 </style>
